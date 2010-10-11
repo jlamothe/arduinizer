@@ -1,96 +1,155 @@
-/* -*- tab-width: 4 -*-
+/* -*- tab-width: 4 -*- */
 
 /*
- * program.c
- * =========
- * Place your Arduino-based code in this file.
- *
- *  Created on: Sep 2, 2010
- *      Author: amackie
- *
- *  Modified on: Oct 11, 2010
- *      By: Jonathan Lamothe <jonathan@jlamothe.net>
- */
 
-// Use the Arduino & SOONCon libraries.
+Alternate SoOnCon Badge Program
+
+Copyright (C) 2010 Jonathan Lamothe <jonathan@jlamothe.net>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see: http://www.gnu.org/licenses/
+
+*/
+
 #include "SoonCon2010Badge.h"
 
-byte redTime;	// The red colour intensity of upper LEDs.
-byte greenTime;	// The green colour intensity of upper LEDs.
-byte blueTime;	// The blue colour intensity of upper LEDs.
+#define DUTY_CYCLE 200			/* The duty cycle of the blink. */
+#define PERIOD1	2000   			/* The period of the first LED. */
+#define PERIOD2	2050			/* The period of the second LED. */
 
-byte colourMode;	// Which colour(s) are lit on lower LEDs.
-unsigned int colourChange;	// Keeps track of when the lower LED colour should change.
+#define CLR_CHG_TIME 100		/* The timeout between colour
+								   changes. */
 
-// Software PWM pulse which sets the shade of each of
-// red, green and blue.  Call repeatedly to maintain the colour needed.
-// If redTime is 0, the LED will have no red, whereas a value of 255 is full red.
-// Basically, this lights each colour for a percentage of its value for a
-// certain amount of time, then blanks it for the rest, but faster than the
-// eye can see (unless you're Superman, I guess)
-// Same for greenTime and blueTime.
-void pulse()
+byte red,						/* The red intensity. */
+  green,						/* The green intensity. */
+  blue;							/* The blue intensity. */
+
+unsigned last_colour_change;	/* Last time at which the colour was
+								   changed. */
+
+enum
+  {
+	red_increase,				/* Red increasing in intensity. */
+	red_decrease,				/* Red decreaseing in intensity. */
+	green_increase,				/* Green increasing in intensity. */
+	green_decrease,				/* Green decreasing in intensity. */
+	blue_increase,				/* Blue increasing in intensity. */
+	blue_decrease				/* Blue decreasing in intensity. */
+  } state;						/* The colour change state. */
+
+/* Calculates the LED colour: */
+void set_colour()
 {
-  int pulse = 0;				// Beginning of pulse.
-  for(pulse = 0; pulse <= 255; pulse++)
+  unsigned time = millis();
+
+  /* Make sure enough time has elapsed before changing the colour
+	 again: */
+  if(time < last_colour_change + CLR_CHG_TIME)
+	return;
+  last_colour_change = time;
+
+  /* Colour change state: */
+  switch(state)
 	{
-	  digitalWrite(LIGHT_1_RED,   redTime   >= pulse ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_GREEN, greenTime >= pulse ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_BLUE,  blueTime  >= pulse ? HIGH : LOW);
-	  delayMicroseconds(10);
+
+	  /* Red increasing: */
+	case red_increase:
+	  red++;
+	  if(red == 0xff)
+		state = blue_decrease;
+	  break;
+
+	  /* Red decreasing: */
+	case red_decrease:
+	  red--;
+	  if(red == 0)
+		state = blue_increase;
+	  break;
+
+	  /* Green increasing: */
+	case green_increase:
+	  green++;
+	  if(green == 0xff)
+		state = red_decrease;
+	  break;
+
+	  /* Green decreasing: */
+	case green_decrease:
+	  green--;
+	  if(green == 0)
+		state = red_increase;
+	  break;
+
+	  /* Blue increasing: */
+	case blue_increase:
+	  blue++;
+	  if(blue == 0xff)
+		state = green_decrease;
+	  break;
+
+	  /* Blue decreasing: */
+	case blue_decrease:
+	  blue--;
+	  if(blue == 0)
+		state = green_increase;
+	  break;
+
+	  /* Can't happen: */
+	default:
+	  state = red_increase;
+
 	}
+
 }
 
-// Cycles between black->red->green->yellow->blue->purple->cyan->white
-// by incrementing a value between 0 and 7 and checking the flag of each.
-void setColourMode()
-{
-	if(millis() / 1000 != colourChange)	// Do this once per second.
-	{	// 1 second has passed
-		colourChange = millis() / 1000;	// Record our current time so we don't do this too often.
-		colourMode = (colourMode+1) % 8; // Change the colour.
-	}
-
-	// Display the colour based on the value of colourMode.
-	digitalWrite(LIGHT_2_RED,   colourMode & 1 ? HIGH : LOW);
-	digitalWrite(LIGHT_2_GREEN, colourMode & 2 ? HIGH : LOW);
-	digitalWrite(LIGHT_2_BLUE,  colourMode & 4 ? HIGH : LOW);
-}
-
-// Arduino-emulating function, called once at startup.
 void setup()
 {
-	// Tell the microprocessor we want to use these pins as output.
-	pinMode(LIGHT_1_RED,   OUTPUT);
-	pinMode(LIGHT_1_GREEN, OUTPUT);
-	pinMode(LIGHT_1_BLUE,  OUTPUT);
 
-	pinMode(LIGHT_2_RED,   OUTPUT);
-	pinMode(LIGHT_2_GREEN, OUTPUT);
-	pinMode(LIGHT_2_BLUE,  OUTPUT);
+  /* Set the pins: */
+  pinMode(LIGHT_1_RED, OUTPUT);
+  pinMode(LIGHT_1_GREEN, OUTPUT);
+  pinMode(LIGHT_1_BLUE, OUTPUT);
+  pinMode(LIGHT_2_RED, OUTPUT);
+  pinMode(LIGHT_2_GREEN, OUTPUT);
+  pinMode(LIGHT_2_BLUE, OUTPUT);
 
-	// Init our variables.
-	// Keep the red/green/blue pulse times evenly out of sync.
-	redTime = 170;
-	greenTime = 85;
-	blueTime = 0;
+  /* Set the initial colour state: */
+  red = 0xff;
+  green = 0;
+  blue = 0;
+  state = green_increase;
 
-	colourMode = 0;
-	colourChange = millis() / 1000; // Set the change-time to the current time.
+  /* Set the timer: */
+  last_colour_change = millis();
+
 }
-// Arduino-emulating function, called repeatedly.
+
 void loop()
 {
-	// Shift the colour of the top LEDs.
-	redTime++;
-	greenTime++;
-	blueTime++;
-
-	// Pulse 10 times (~100 microseconds)
-	byte lightTime=0;
-	for(lightTime=0;lightTime<10;lightTime++)
+  unsigned time = millis();
+  boolean led1 = time % PERIOD1 < DUTY_CYCLE,
+	led2 = time % PERIOD2 < DUTY_CYCLE;
+  int i;
+  for(i = 0; i < 0xff; i++)
 	{
-		pulse();
-		setColourMode();	// Check if the bottom LED colour needs updating.
+	  digitalWrite(LIGHT_1_RED, (led1 && red < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_1_GREEN, (led1 && green < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_1_BLUE, (led1 && blue < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_RED, (led2 && red < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_GREEN, (led2 && green < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_BLUE, (led2 && blue < i) ? HIGH : LOW);
 	}
+  set_colour();
 }
+
+/* jl */
