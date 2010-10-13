@@ -142,12 +142,12 @@ void loop()
   int i;
   for(i = 0; i < 0xff; i++)
 	{
-	  digitalWrite(LIGHT_1_RED, (led1 && red < i) ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_GREEN, (led1 && green < i) ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_BLUE, (led1 && blue < i) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_RED, (led2 && red < i) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_GREEN, (led2 && green < i) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_BLUE, (led2 && blue < i) ? HIGH : LOW);
+	  digitalWrite(LIGHT_1_RED, (led1 && i < red) ? HIGH : LOW);
+	  digitalWrite(LIGHT_1_GREEN, (led1 && i < green) ? HIGH : LOW);
+	  digitalWrite(LIGHT_1_BLUE, (led1 && i < blue) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_RED, (led2 && i < red) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_GREEN, (led2 && i < green) ? HIGH : LOW);
+	  digitalWrite(LIGHT_2_BLUE, (led2 && i < blue) ? HIGH : LOW);
 	}
   set_colour();
 }
