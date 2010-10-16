@@ -2,7 +2,7 @@
 
 /*
 
-Alternate SoOnCon Badge Program
+SoOnCon Badge Test Program
 
 Copyright (C) 2010 Jonathan Lamothe <jonathan@jlamothe.net>
 
@@ -23,133 +23,56 @@ along with this program.  If not, see: http://www.gnu.org/licenses/
 
 #include "SoonCon2010Badge.h"
 
-#define DUTY_CYCLE 200			/* The duty cycle of the blink. */
-#define PERIOD1	2000   			/* The period of the first LED. */
-#define PERIOD2	2050			/* The period of the second LED. */
+#define BLINK_TIME 200
+#define TIMEOUT 2000
+#define NUM_SWITCHES 4
 
-#define CLR_CHG_TIME 100		/* The timeout between colour
-								   changes. */
+const int button[] = { SWITCH_1, SWITCH_2, SWITCH_0, SWITCH_4 };
 
-byte red,						/* The red intensity. */
-  green,						/* The green intensity. */
-  blue;							/* The blue intensity. */
-
-unsigned last_colour_change;	/* Last time at which the colour was
-								   changed. */
-
-enum
-  {
-	red_increase,				/* Red increasing in intensity. */
-	red_decrease,				/* Red decreaseing in intensity. */
-	green_increase,				/* Green increasing in intensity. */
-	green_decrease,				/* Green decreasing in intensity. */
-	blue_increase,				/* Blue increasing in intensity. */
-	blue_decrease				/* Blue decreasing in intensity. */
-  } state;						/* The colour change state. */
-
-/* Calculates the LED colour: */
-void set_colour()
+void blink(unsigned n)
 {
-  unsigned time = millis();
-
-  /* Make sure enough time has elapsed before changing the colour
-	 again: */
-  if(time < last_colour_change + CLR_CHG_TIME)
-	return;
-  last_colour_change = time;
-
-  /* Colour change state: */
-  switch(state)
+  int i = 0;
+  for(i = 0; i < n; i++)
 	{
-
-	  /* Red increasing: */
-	case red_increase:
-	  red++;
-	  if(red == 0xff)
-		state = blue_decrease;
-	  break;
-
-	  /* Red decreasing: */
-	case red_decrease:
-	  red--;
-	  if(red == 0)
-		state = blue_increase;
-	  break;
-
-	  /* Green increasing: */
-	case green_increase:
-	  green++;
-	  if(green == 0xff)
-		state = red_decrease;
-	  break;
-
-	  /* Green decreasing: */
-	case green_decrease:
-	  green--;
-	  if(green == 0)
-		state = red_increase;
-	  break;
-
-	  /* Blue increasing: */
-	case blue_increase:
-	  blue++;
-	  if(blue == 0xff)
-		state = green_decrease;
-	  break;
-
-	  /* Blue decreasing: */
-	case blue_decrease:
-	  blue--;
-	  if(blue == 0)
-		state = green_increase;
-	  break;
-
-	  /* Can't happen: */
-	default:
-	  state = red_increase;
-
+	  digitalWrite(LIGHT_1_RED, HIGH);
+	  delay(BLINK_TIME);
+	  digitalWrite(LIGHT_1_RED, LOW);
+	  delay(BLINK_TIME);
 	}
-
+  delay(TIMEOUT);
 }
 
 void setup()
 {
 
-  /* Set the pins: */
+  /* Set the inputs: */
+  pinMode(SWITCH_0, INPUT);
+  pinMode(SWITCH_1, INPUT);
+  pinMode(SWITCH_2, INPUT);
+  pinMode(SWITCH_4, INPUT);
+
+  /* Set the outputs: */
   pinMode(LIGHT_1_RED, OUTPUT);
   pinMode(LIGHT_1_GREEN, OUTPUT);
   pinMode(LIGHT_1_BLUE, OUTPUT);
   pinMode(LIGHT_2_RED, OUTPUT);
   pinMode(LIGHT_2_GREEN, OUTPUT);
   pinMode(LIGHT_2_BLUE, OUTPUT);
-
-  /* Set the initial colour state: */
-  red = 0xff;
-  green = 0;
-  blue = 0;
-  state = green_increase;
-
-  /* Set the timer: */
-  last_colour_change = millis();
+  digitalWrite(LIGHT_1_RED, LOW);
+  digitalWrite(LIGHT_1_GREEN, LOW);
+  digitalWrite(LIGHT_1_BLUE, LOW);
+  digitalWrite(LIGHT_2_RED, LOW);
+  digitalWrite(LIGHT_2_GREEN, LOW);
+  digitalWrite(LIGHT_2_BLUE, LOW);
 
 }
 
 void loop()
 {
-  unsigned time = millis();
-  boolean led1 = time % PERIOD1 < DUTY_CYCLE,
-	led2 = time % PERIOD2 < DUTY_CYCLE;
-  int i;
-  for(i = 0; i < 0xff; i++)
-	{
-	  digitalWrite(LIGHT_1_RED, (led1 && i < red) ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_GREEN, (led1 && i < green) ? HIGH : LOW);
-	  digitalWrite(LIGHT_1_BLUE, (led1 && i < blue) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_RED, (led2 && i < red) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_GREEN, (led2 && i < green) ? HIGH : LOW);
-	  digitalWrite(LIGHT_2_BLUE, (led2 && i < blue) ? HIGH : LOW);
-	}
-  set_colour();
+  int i = 0;
+  for(i = 0; i < NUM_SWITCHES; i++)
+	if(digitalRead(button[i]) == LOW)
+	  blink(i + 1);
 }
 
 /* jl */
