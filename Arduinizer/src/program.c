@@ -122,6 +122,8 @@ void setup()
   pinMode(LIGHT_2_RED, OUTPUT);
   pinMode(LIGHT_2_GREEN, OUTPUT);
   pinMode(LIGHT_2_BLUE, OUTPUT);
+  pinMode(IR_LED, OUTPUT);
+  digitalWrite(IR_LED, LOW);
 
   /* Set the initial colour state: */
   red = 0xff;
