@@ -58,12 +58,14 @@ void setup()
   pinMode(LIGHT_2_RED, OUTPUT);
   pinMode(LIGHT_2_GREEN, OUTPUT);
   pinMode(LIGHT_2_BLUE, OUTPUT);
+  pinMode(IR_LED, OUTPUT);
   digitalWrite(LIGHT_1_RED, LOW);
   digitalWrite(LIGHT_1_GREEN, LOW);
   digitalWrite(LIGHT_1_BLUE, LOW);
   digitalWrite(LIGHT_2_RED, LOW);
   digitalWrite(LIGHT_2_GREEN, LOW);
   digitalWrite(LIGHT_2_BLUE, LOW);
+  digitalWrite(IR_LED, LOW);
 
 }
 
